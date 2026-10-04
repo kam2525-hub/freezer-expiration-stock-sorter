@@ -1,0 +1,605 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>冷凍庫の化石化防止！賞味期限パズル＆救出優先度チェッカー</title>
+    <style>
+        :root {
+            --primary: #0284c7;
+            --primary-dark: #0369a1;
+            --accent: #f59e0b;
+            --danger: #ef4444;
+            --warning: #f97316;
+            --safe: #10b981;
+            --bg: #f0f9ff;
+            --card-bg: #ffffff;
+            --text: #334155;
+            --text-light: #64748b;
+            --border: #bae6fd;
+            --radius: 12px;
+            --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg);
+            color: var(--text);
+            line-height: 1.6;
+            padding: 1rem;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding-bottom: 3rem;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 2rem;
+            padding: 1.5rem;
+            background: linear-gradient(135deg, #0284c7, #0369a1);
+            color: white;
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+        }
+
+        header h1 {
+            font-size: 1.5rem;
+            margin-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+
+        header p {
+            font-size: 0.9rem;
+            opacity: 0.9;
+        }
+
+        .card {
+            background: var(--card-bg);
+            border-radius: var(--radius);
+            padding: 1.5rem;
+            box-shadow: var(--shadow);
+            margin-bottom: 1.5rem;
+            border: 1px solid var(--border);
+        }
+
+        .card h2 {
+            font-size: 1.2rem;
+            margin-bottom: 1rem;
+            color: var(--primary-dark);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 1rem;
+        }
+
+        @media (min-width: 640px) {
+            .form-grid {
+                grid-template-columns: 2fr 1fr 1fr auto;
+            }
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        label {
+            font-size: 0.85rem;
+            font-weight: bold;
+            margin-bottom: 0.3rem;
+            color: var(--text-light);
+        }
+
+        input, select {
+            padding: 0.6rem 0.8rem;
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            font-size: 1rem;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        input:focus, select:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.15);
+        }
+
+        .btn {
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            padding: 0.6rem 1.2rem;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background-color 0.2s, transform 0.1s;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.4rem;
+        }
+
+        .btn:hover {
+            background-color: var(--primary-dark);
+        }
+
+        .btn:active {
+            transform: scale(0.98);
+        }
+
+        .btn-danger {
+            background-color: var(--danger);
+        }
+        .btn-danger:hover {
+            background-color: #dc2626;
+        }
+
+        .btn-accent {
+            background-color: var(--accent);
+            color: #78350f;
+        }
+        .btn-accent:hover {
+            background-color: #d97706;
+            color: white;
+        }
+
+        /* 救出リスト */
+        .item-list {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 0.8rem;
+        }
+
+        .item-card {
+            display: flex;
+            flex-direction: column;
+            padding: 1rem;
+            border-radius: 8px;
+            background: #f8fafc;
+            border-left: 6px solid var(--text-light);
+            gap: 0.5rem;
+            position: relative;
+            transition: transform 0.2s;
+        }
+
+        @media (min-width: 640px) {
+            .item-card {
+                flex-direction: row;
+                align-items: center;
+                justify-content: space-between;
+            }
+        }
+
+        .item-card.priority-high {
+            border-left-color: var(--danger);
+            background: #fef2f2;
+        }
+
+        .item-card.priority-mid {
+            border-left-color: var(--warning);
+            background: #fff7ed;
+        }
+
+        .item-card.priority-low {
+            border-left-color: var(--safe);
+            background: #f0fdf4;
+        }
+
+        .item-info {
+            display: flex;
+            flex-direction: column;
+            gap: 0.2rem;
+        }
+
+        .item-name {
+            font-weight: bold;
+            font-size: 1.1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .badge {
+            font-size: 0.75rem;
+            padding: 0.1rem 0.5rem;
+            border-radius: 999px;
+            color: white;
+            font-weight: bold;
+        }
+        .badge-high { background-color: var(--danger); }
+        .badge-mid { background-color: var(--warning); }
+        .badge-low { background-color: var(--safe); }
+        .badge-category { background-color: var(--text-light); }
+
+        .item-details {
+            font-size: 0.85rem;
+            color: var(--text-light);
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .item-actions {
+            display: flex;
+            gap: 0.5rem;
+            align-self: flex-end;
+        }
+
+        @media (min-width: 640px) {
+            .item-actions {
+                align-self: center;
+            }
+        }
+
+        .btn-sm {
+            padding: 0.3rem 0.6rem;
+            font-size: 0.85rem;
+        }
+
+        /* レシピ提案エリア */
+        .recipe-box {
+            background: #ecfdf5;
+            border: 1px solid #a7f3d0;
+            border-radius: var(--radius);
+            padding: 1.5rem;
+            margin-top: 1.5rem;
+        }
+
+        .recipe-box h3 {
+            color: #065f46;
+            margin-bottom: 0.8rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .recipe-content {
+            font-size: 0.95rem;
+            color: #047857;
+            white-space: pre-line;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 2rem;
+            color: var(--text-light);
+        }
+
+        .toolbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+        }
+
+        .stats {
+            font-size: 0.9rem;
+            color: var(--text-light);
+        }
+
+        svg {
+            width: 20px;
+            height: 20px;
+            fill: currentColor;
+            flex-shrink: 0;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <h1>
+            <svg viewBox="0 0 24 24"><path d="M19,3H5C3.89,3 3,3.89 3,5V19C3,20.1 3.89,21 5,21H19C20.1,21 21,20.1 21,19V5C21,3.89 20.1,3 19,3M11,5V11H5V5H11M5,13H11V19H5V13M19,19H13V13H19V19M19,11H13V5H19V11Z"/></svg>
+            冷凍庫の化石化防止！
+        </h1>
+        <p>賞味期限パズル＆救出優先度チェッカー</p>
+    </header>
+
+    <!-- 入力フォーム -->
+    <section class="card">
+        <h2>
+            <svg viewBox="0 0 24 24"><path d="M19,13H13V19H11V13H5V11H11V5H13V11H19V13Z"/></svg>
+            化石化予備軍の食材を追加
+        </h2>
+        <form id="item-form" class="form-grid">
+            <div class="form-group">
+                <label for="item-name">食材名</label>
+                <input type="text" id="item-name" placeholder="例: 豚切り落とし、特売鮭の切り身" required>
+            </div>
+            <div class="form-group">
+                <label for="item-category">カテゴリ</label>
+                <select id="item-category">
+                    <option value="肉類">肉類</option>
+                    <option value="魚介類">魚介類</option>
+                    <option value="野菜類">野菜類</option>
+                    <option value="調理品・冷凍食品">調理品・冷凍食品</option>
+                    <option value="その他">その他</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="item-date">冷凍した日 or 限界目安日</label>
+                <input type="date" id="item-date" required>
+            </div>
+            <div class="form-group" style="justify-content: flex-end;">
+                <label style="visibility: hidden; display:none;">追加</label>
+                <button type="submit" class="btn" style="height: 42px;">
+                    <svg viewBox="0 0 24 24"><path d="M19,13H13V19H11V13H5V11H11V5H13V11H19V13Z"/></svg>
+                    登録
+                </button>
+            </div>
+        </form>
+    </section>
+
+    <!-- 救出リスト -->
+    <section class="card">
+        <div class="toolbar">
+            <h2>
+                <svg viewBox="0 0 24 24"><path d="M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2M12,4A8,8 0 0,1 20,12A8,8 0 0,1 12,20A8,8 0 0,1 4,12A8,8 0 0,1 12,4M12.5,7H11V13L16.25,16.15L17,14.92L12.5,12.25V7Z"/></svg>
+                冷凍庫の救出優先度リスト
+            </h2>
+            <div class="stats" id="item-count">登録数: 0件</div>
+        </div>
+
+        <div style="margin-bottom: 1rem;">
+            <button type="button" class="btn btn-accent" id="generate-recipe-btn" style="width: 100%;">
+                <svg viewBox="0 0 24 24"><path d="M12,2C6.5,2 2,6.5 2,12C2,17.5 6.5,22 12,22C17.5,22 22,17.5 22,12C22,6.5 17.5,2 12,2M12,4C16.41,4 20,7.59 20,12C20,16.41 16.41,20 12,20C7.59,20 4,16.41 4,12C4,7.59 7.59,4 12,4M12.5,7V12.25L17,14.92L16.25,16.15L11,13V7H12.5Z"/></svg>
+                上位食材で「一掃パズル献立」を組み立てる！
+            </button>
+        </div>
+
+        <ul id="item-list" class="item-list">
+            <!-- 動的生成 -->
+        </ul>
+
+        <div id="recipe-container"></div>
+    </section>
+</div>
+
+<script>
+    // LocalStorage Key
+    const STORAGE_KEY = 'freezer_fossil_items_v1';
+
+    // State
+    let items = [];
+
+    // DOM Elements
+    const itemForm = document.getElementById('item-form');
+    const itemNameInput = document.getElementById('item-name');
+    const itemCategorySelect = document.getElementById('item-category');
+    const itemDateInput = document.getElementById('item-date');
+    const itemListEl = document.getElementById('item-list');
+    const itemCountEl = document.getElementById('item-count');
+    const generateRecipeBtn = document.getElementById('generate-recipe-btn');
+    const recipeContainer = document.getElementById('recipe-container');
+
+    // 初期日付を今日に設定
+    itemDateInput.valueAsDate = new Date();
+
+    // 初期化ロード
+    function loadItems() {
+        const saved = localStorage.getItem(STORAGE_KEY);
+        if (saved) {
+            try {
+                items = JSON.parse(saved);
+            } catch(e) {
+                items = [];
+            }
+        }
+        render();
+    }
+
+    // 保存
+    function saveItems() {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
+    }
+
+    // 追加処理
+    itemForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const name = itemNameInput.value.trim();
+        const category = itemCategorySelect.value;
+        const date = itemDateInput.value;
+
+        if (!name || !date) return;
+
+        const newItem = {
+            id: Date.now().toString(),
+            name,
+            category,
+            date // 登録日 or 限界目安日
+        };
+
+        items.push(newItem);
+        saveItems();
+        render();
+
+        itemNameInput.value = '';
+        itemNameInput.focus();
+    });
+
+    // 削除処理
+    window.deleteItem = function(id) {
+        items = items.filter(item => item.id !== id);
+        saveItems();
+        render();
+        recipeContainer.innerHTML = '';
+    };
+
+    // 経過日数と優先度計算
+    function calculatePriority(dateStr) {
+        const targetDate = new Date(dateStr);
+        const today = new Date();
+        // 時間をリセットして日数差のみ計算
+        today.setHours(0,0,0,0);
+        targetDate.setHours(0,0,0,0);
+        
+        const diffTime = today - targetDate;
+        const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24)); // プラスなら経過日数
+
+        // 冷凍庫での推奨保存期間（目安）を超えているか等で判定
+        // 0日（今日）冷凍したものから、過去に遡るほど古い（化石化している）
+        // ここでは「古い日付（＝経過日数が多い）」ほど優先度高とする。
+        // ※もし未来の日付（賞味期限の限界日など）を入れている場合は逆転させるが、
+        // 概要に「古い順・傷みやすい順」とあるため、「冷凍した日」からの経過日数（大きいほど古い）としてスコアリング。
+        
+        let priorityClass = 'priority-low';
+        let badgeClass = 'badge-low';
+        let badgeText = '余裕あり';
+        let score = diffDays; // 日数が大きいほど古い
+
+        if (diffDays >= 60) {
+            priorityClass = 'priority-high';
+            badgeClass = 'badge-high';
+            badgeText = '🚨 絶賛化石化中！';
+        } else if (diffDays >= 30) {
+            priorityClass = 'priority-mid';
+            badgeClass = 'badge-mid';
+            badgeText = '⚠️ 要急浮上';
+        } else {
+            priorityClass = 'badge-low';
+            badgeClass = 'badge-low';
+            badgeText = '❄️ まだ安全';
+        }
+
+        return {
+            diffDays,
+            priorityClass,
+            badgeClass,
+            badgeText,
+            score
+        };
+    }
+
+    // 描画
+    function render() {
+        // スコアリングしてソート（古い順：diffDaysが大きい順）
+        const processedItems = items.map(item => {
+            const calc = calculatePriority(item.date);
+            return { ...item, ...calc };
+        });
+
+        processedItems.sort((a, b) => b.score - a.score);
+
+        itemCountEl.textContent = `登録数: ${processedItems.length}件`;
+
+        if (processedItems.length === 0) {
+            itemListEl.innerHTML = `
+                <div class="empty-state">
+                    <p>冷凍庫は現在クリーンです！化石化している食材はありません。</p>
+                </div>
+            `;
+            return;
+        }
+
+        itemListEl.innerHTML = '';
+        processedItems.forEach(item => {
+            const li = document.createElement('li');
+            li.className = `item-card ${item.priorityClass}`;
+            
+            const displayDays = item.diffDays >= 0 ? `冷凍から ${item.diffDays}日経過` : `設定日まであと ${Math.abs(item.diffDays)}日`;
+
+            li.innerHTML = `
+                <div class="item-info">
+                    <div class="item-name">
+                        ${escapeHtml(item.name)}
+                        <span class="badge ${item.badgeClass}">${item.badgeText}</span>
+                        <span class="badge badge-category">${escapeHtml(item.category)}</span>
+                    </div>
+                    <div class="item-details">
+                        <span>📅 ${item.date} (${displayDays})</span>
+                    </div>
+                </div>
+                <div class="item-actions">
+                    <button class="btn btn-danger btn-sm" onclick="deleteItem('${item.id}')">
+                        <svg style="width:16px;height:16px;" viewBox="0 0 24 24"><path d="M19,4H15.5L14.5,3H9.5L8.5,4H5V6H19M6,19A2,2 0 0,0 8,21H16A2,2 0 0,0 18,19V7H6V19Z"/></svg>
+                        救出完了(消費)
+                    </button>
+                </div>
+            `;
+            itemListEl.appendChild(li);
+        });
+    }
+
+    // レシピ生成ロジック
+    generateRecipeBtn.addEventListener('click', () => {
+        if (items.length === 0) {
+            alert('まず食材を登録してください！');
+            return;
+        }
+
+        // 優先度が高い順に並替え
+        const sorted = [...items].map(item => {
+            return { ...item, ...calculatePriority(item.date) };
+        }).sort((a, b) => b.score - a.score);
+
+        // 上位最大3つをピックアップ
+        const topItems = sorted.slice(0, 3);
+        const categories = topItems.map(i => i.category);
+
+        let recipeTitle = "🔥 【冷凍庫 救出パズル献立】";
+        let recipeBody = "";
+
+        const names = topItems.map(i => `「${i.name}」`).join('、');
+
+        recipeBody += `本日の救出最優先食材：${names}\n\n`;
+
+        // 簡易アルゴリズムによる献立提案
+        if (topItems.length >= 2) {
+            recipeBody += `【おすすめ調理法：一掃ごちゃ混ぜ旨味炒め・鍋】\n`;
+            recipeBody += `古い霜つき肉や魚介、使いかけ野菜は、味を濃いめ（味噌炒め、中華あんかけ、キムチ鍋など）にすることで冷凍焼けや臭みを完全にカバーできます！\n\n`;
+            recipeBody += `手順1: 凍ったままの食材をサッと流水にくぐらせて表面の古い霜を洗い流す。\n`;
+            recipeBody += `手順2: ごま油とにんにく・生姜を効かせたフライパンで、火の通りにくいものからガンガン炒め合わせる。\n`;
+            recipeBody += `手順3: 醤油・みりん・味噌・鶏ガラスープの素などでガッツリ味付けして完成！`;
+        } else {
+            recipeBody += `【おすすめ調理法：単独救出 旨味リメイク】\n`;
+            recipeBody += `単一の食材なので、スープやチャーハンの具材に刻み込んでしまいましょう。加熱をしっかり行うことで安心して美味しく食べられます！`;
+        }
+
+        recipeContainer.innerHTML = `
+            <div class="recipe-box">
+                <h3>
+                    <svg viewBox="0 0 24 24"><path d="M11,9H13V6H11M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2M12,20C7.59,20 4,16.41 4,12C4,7.59 7.59,4 12,4C16.41,4 20,7.59 20,12C20,16.41 16.41,20 12,20M11,18H13V11H11V18Z"/></svg>
+                    ${recipeTitle}
+                </h3>
+                <div class="recipe-content">${escapeHtml(recipeBody)}</div>
+            </div>
+        `;
+
+        recipeContainer.scrollIntoView({ behavior: 'smooth' });
+    });
+
+    // XSS対策簡易エスケープ
+    function escapeHtml(str) {
+        return str.replace(/[&<>'"]/g, 
+            tag => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag] || tag)
+        );
+    }
+
+    // 初回実行
+    loadItems();
+</script>
+
+</body>
+</html>
